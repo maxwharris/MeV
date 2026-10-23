@@ -1,0 +1,688 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="color-scheme" content="light">
+<title>Index</title>
+<style>
+  /* ============================================================
+     INDEX  ·  mostly-white, typographic TV home
+     Times (Tinos on the TV) + Courier (Cousine). pg-lang restraint.
+     Views: Home / Library / Manage. Favourites persist locally.
+     ============================================================ */
+  :root{
+    --paper:#f3f2ee; --ink:#1a1915; --soft:#6c6a60; --meta:#a3a096;
+    --hair:rgba(26,25,21,.16); --mark:rgba(26,25,21,.06);
+    --serif:"Times New Roman", Times, Georgia, serif;
+    --mono:"Courier New", Courier, ui-monospace, monospace;
+    --gutter:clamp(28px,6.2vw,120px);
+    --vpad:clamp(24px,4.4vh,54px);
+  }
+  *{box-sizing:border-box}
+  html,body{height:100%}
+  body{margin:0; background:var(--paper); color:var(--ink);
+    font-family:var(--serif); -webkit-font-smoothing:antialiased;
+    text-rendering:optimizeLegibility; overflow:hidden}
+
+  .view{position:fixed; inset:0; display:flex; flex-direction:column;
+    padding:var(--vpad) var(--gutter);
+    opacity:0; visibility:hidden; transform:translateY(8px);
+    transition:opacity .42s ease, transform .42s cubic-bezier(.2,.7,.2,1), visibility 0s .42s}
+  body[data-view="home"]    #home,
+  body[data-view="library"] #library,
+  body[data-view="sources"] #sources,
+  body[data-view="manage"]  #manage{opacity:1; visibility:visible; transform:none;
+    transition:opacity .42s ease, transform .42s cubic-bezier(.2,.7,.2,1)}
+
+  /* top bar ---------------------------------------------------- */
+  .top{display:flex; align-items:center; justify-content:space-between}
+  .mark{font-family:var(--mono); font-size:clamp(11px,1.15vw,15px);
+    letter-spacing:.18em; text-transform:uppercase; color:var(--soft)}
+  .glyphs{display:flex; gap:clamp(14px,1.5vw,26px); color:var(--soft)}
+  .glyphs button{all:unset; cursor:pointer; display:flex; line-height:0; color:inherit; position:relative;
+    transition:transform .25s ease, color .25s ease}
+  .glyphs svg{width:clamp(17px,1.5vw,22px); height:clamp(17px,1.5vw,22px)}
+  .glyphs .g{stroke:currentColor; stroke-width:1.4; fill:none; stroke-linecap:round; stroke-linejoin:round}
+  .glyphs button.on{color:var(--ink); transform:scale(1.14)}
+  .glyphs button.on .g{stroke-width:1.7}
+
+  /* HOME: hero + multi-column favourites ----------------------- */
+  .hero{margin-top:clamp(10px,3.2vh,40px)}
+  .greeting{font-family:var(--mono); font-size:clamp(11px,1.15vw,15px);
+    letter-spacing:.2em; text-transform:uppercase; color:var(--meta); margin:0 0 .5em}
+  .clock{display:flex; align-items:baseline; gap:.28em; line-height:.9}
+  .time{font-size:clamp(54px,9.6vw,150px); letter-spacing:-.015em}
+  .mer{font-size:clamp(20px,2.7vw,40px); color:var(--soft)}
+  .date{font-family:var(--mono); font-size:clamp(11px,1.2vw,16px);
+    letter-spacing:.14em; text-transform:uppercase; color:var(--meta); margin-top:.9em}
+  /* day/night sun-moon mark before the greeting */
+  .daymark{display:inline-flex; vertical-align:-.2em; margin-right:.7em; color:var(--meta)}
+  .daymark svg{width:1.2em; height:1.2em}
+  .daymark .g{stroke:currentColor; stroke-width:1.5; fill:none; stroke-linecap:round; stroke-linejoin:round}
+  /* clock + big temperature on one baseline */
+  .heroline{display:flex; align-items:baseline; margin-top:.06em}
+  .wx{display:flex; align-items:baseline; margin-left:clamp(40px,6.6vw,132px);
+    opacity:0; transition:opacity .6s ease}
+  .wx.show{opacity:1}
+  .wx .deg{font-size:clamp(46px,7.8vw,120px); letter-spacing:-.02em; line-height:.9; color:var(--ink)}
+  .wx .cond{font-family:var(--mono); font-size:clamp(11px,1.2vw,16px); letter-spacing:.14em;
+    text-transform:uppercase; color:var(--meta); margin-left:clamp(10px,1.1vw,20px)}
+  /* rotating SAS quote fills the middle (day: round start, night: round end) */
+  .quotewrap{flex:1; display:flex; align-items:center; min-height:0}
+  .quote{font-style:italic; font-size:clamp(21px,3.1vw,44px); line-height:1.34; letter-spacing:-.008em;
+    color:var(--soft); margin:0; max-width:none; opacity:0; transition:opacity .9s ease}
+  .quote.show{opacity:1}
+  .quote .qm{color:var(--meta); font-style:normal}
+
+  .favwrap{margin-top:0}
+  .lhead{font-family:var(--mono); font-size:clamp(10px,1.05vw,13px);
+    letter-spacing:.2em; text-transform:uppercase; color:var(--meta);
+    padding-bottom:.9em; border-bottom:1px solid var(--hair)}
+  .favs{display:grid; grid-template-columns:1fr 1fr; column-gap:clamp(30px,5vw,110px); row-gap:0}
+  .cell{position:relative; display:flex; align-items:baseline; gap:clamp(12px,1.6vw,30px);
+    padding:clamp(5px,1.0vh,12px) 0; cursor:pointer;
+    transition:transform .32s cubic-bezier(.2,.7,.2,1)}
+  .cell .idx{font-family:var(--mono); font-size:clamp(11px,1.1vw,15px);
+    color:var(--meta); min-width:2.1em; letter-spacing:.06em; transition:color .3s}
+  .cell .name{font-size:clamp(20px,2.9vw,44px); letter-spacing:-.012em; transition:opacity .3s}
+  .cell .dot{position:absolute; left:calc(-1 * clamp(16px,1.8vw,34px)); top:50%;
+    width:clamp(6px,.6vw,9px); height:clamp(6px,.6vw,9px); border-radius:50%;
+    background:var(--ink); transform:translateY(-50%) scale(0); opacity:0;
+    transition:transform .32s cubic-bezier(.2,.7,.2,1), opacity .25s}
+  .cell:not(.on) .name{opacity:.42}
+  .cell.on{transform:translateX(clamp(12px,1.4vw,26px))}
+  .cell.on .idx{color:var(--soft)}
+  .cell.on .dot{opacity:1; transform:translateY(-50%) scale(1)}
+  .cell.press{transform:translateX(clamp(12px,1.4vw,26px)) scale(.985)}
+
+  .foot{display:flex; align-items:center; justify-content:space-between;
+    margin-top:clamp(12px,2vh,22px); padding-top:clamp(12px,1.6vh,20px);
+    border-top:1px solid var(--hair);
+    font-family:var(--mono); font-size:clamp(10px,1.05vw,14px);
+    letter-spacing:.16em; text-transform:uppercase; color:var(--meta)}
+
+  /* LIBRARY + MANAGE shared header ----------------------------- */
+  .vhead{display:flex; align-items:baseline; justify-content:space-between; margin-bottom:clamp(8px,1.4vh,16px)}
+  .vtitle{display:flex; align-items:baseline; gap:.6em}
+  .vtitle h1{font-size:clamp(28px,4.4vw,60px); font-weight:400; letter-spacing:-.015em; margin:0}
+  .vtitle .count{font-family:var(--mono); font-size:clamp(11px,1.2vw,16px);
+    letter-spacing:.12em; text-transform:uppercase; color:var(--meta)}
+  .back{font-family:var(--mono); font-size:clamp(11px,1.15vw,15px);
+    letter-spacing:.14em; text-transform:uppercase; color:var(--soft); cursor:pointer}
+
+  /* LIBRARY grid ---------------------------------------------- */
+  .grid{margin-top:clamp(8px,1.6vh,20px); flex:1; overflow:auto;
+    display:grid; grid-template-columns:repeat(3,minmax(0,1fr));
+    column-gap:clamp(24px,3.4vw,72px); row-gap:0;
+    align-content:start; border-top:1px solid var(--hair); scrollbar-width:none}
+  .grid::-webkit-scrollbar{display:none}
+  .gitem{position:relative; display:flex; align-items:baseline; gap:clamp(10px,1.1vw,20px);
+    padding:clamp(6px,1.05vh,12px) 0; cursor:pointer;
+    transition:transform .3s cubic-bezier(.2,.7,.2,1)}
+  .gitem .gidx{font-family:var(--mono); font-size:clamp(10px,.95vw,13px);
+    color:var(--meta); min-width:2.4em; letter-spacing:.05em}
+  .gitem .gname{font-size:clamp(16px,1.9vw,27px); letter-spacing:-.008em; opacity:.52; transition:opacity .25s}
+  .gitem .gtag{margin-left:auto; font-family:var(--mono); font-size:clamp(9px,.9vw,12px);
+    letter-spacing:.1em; text-transform:uppercase; color:var(--meta); opacity:0}
+  .gitem .gdot{position:absolute; left:calc(-1 * clamp(13px,1.1vw,20px)); top:50%;
+    width:clamp(5px,.5vw,8px); height:clamp(5px,.5vw,8px); border-radius:50%;
+    background:var(--ink); transform:translateY(-50%) scale(0); opacity:0; transition:transform .3s, opacity .22s}
+  .gitem.on{transform:translateX(clamp(10px,1vw,18px))}
+  .gitem.on .gname{opacity:1}
+  .gitem.on .gtag{opacity:1}
+  .gitem.on .gdot{opacity:1; transform:translateY(-50%) scale(1)}
+  .gitem.fav .gname{opacity:.34}
+  .gitem.press{transform:translateX(clamp(10px,1vw,18px)) scale(.985)}
+
+  /* MANAGE list ----------------------------------------------- */
+  .mlist{margin-top:clamp(8px,1.6vh,20px); flex:1; overflow:auto; border-top:1px solid var(--hair); scrollbar-width:none}
+  .mlist::-webkit-scrollbar{display:none}
+  .mrow{position:relative; display:flex; align-items:baseline; gap:clamp(12px,1.6vw,28px);
+    padding:clamp(7px,1.3vh,16px) 0; cursor:pointer; border-bottom:1px solid var(--hair);
+    transition:transform .28s cubic-bezier(.2,.7,.2,1), background .2s}
+  .mrow .midx{font-family:var(--mono); font-size:clamp(11px,1.1vw,15px); color:var(--meta); min-width:2.2em}
+  .mrow .mname{font-size:clamp(20px,2.6vw,38px); letter-spacing:-.01em}
+  .mrow .mact{margin-left:auto; font-family:var(--mono); font-size:clamp(11px,1.1vw,15px);
+    letter-spacing:.12em; text-transform:uppercase; color:var(--meta); opacity:0; transition:opacity .25s, color .25s}
+  .mrow.on{background:var(--mark)}
+  .mrow.on .mact{opacity:1}
+  .mrow.on.rm .mname{opacity:.5}
+  .mrow.on.rm .mact{color:#b0514e}
+  .mrow.grab{background:var(--mark); transform:scale(1.01)}
+  .mrow.grab .mname::after{content:"  \2195"; color:var(--soft)}
+  .mrow.add .mname{color:var(--soft)}
+  .mrow.add.on .mname{color:var(--ink)}
+
+  /* OVERLAY SHEET (AirPlay info) ------------------------------ */
+  .sheet{position:fixed; inset:0; z-index:40; display:flex; align-items:center; justify-content:center;
+    padding:var(--vpad) var(--gutter); background:rgba(243,242,238,.90);
+    opacity:0; visibility:hidden; transition:opacity .34s ease, visibility 0s .34s}
+  body.sheet-on .sheet{opacity:1; visibility:visible; transition:opacity .34s ease}
+  .card{width:640px; max-width:82vw; text-align:left}
+  .card .ktitle{font-size:clamp(34px,5.2vw,70px); font-weight:400; letter-spacing:-.015em; margin:0 0 .7em}
+  .card .kstep{display:block; font-size:clamp(18px,2.3vw,32px); letter-spacing:-.008em; padding:.24em 0}
+  .card .kstep .n{font-family:var(--mono); font-size:.6em; letter-spacing:.08em; color:var(--meta); margin-right:1.1em}
+  .card .knote{display:block; font-family:var(--mono); font-size:clamp(12px,1.25vw,16px);
+    letter-spacing:.04em; line-height:1.8; color:var(--soft); margin-top:1.6em}
+  .card .kback{margin-top:2em; font-family:var(--mono); font-size:clamp(11px,1.15vw,15px);
+    letter-spacing:.16em; text-transform:uppercase; color:var(--meta)}
+
+  /* SCREENSAVER (idle): rotating wireframe surface on paper --- */
+  .saver{position:fixed; inset:0; z-index:60; background:var(--paper); overflow:hidden;
+    opacity:0; visibility:hidden; transition:opacity .9s ease, visibility 0s .9s}
+  body.saver-on .saver{opacity:1; visibility:visible; transition:opacity .9s ease}
+  #svcanvas{position:fixed; inset:0; width:100%; height:100%; display:block}
+  .saver .sclock{position:fixed; left:clamp(28px,6vw,96px); bottom:clamp(26px,6vh,84px); color:var(--ink)}
+  .saver .stime{font-size:clamp(48px,8.4vw,128px); letter-spacing:-.015em; line-height:1}
+  .saver .sdate{font-family:var(--mono); font-size:clamp(11px,1.2vw,16px); letter-spacing:.16em;
+    text-transform:uppercase; color:var(--meta); margin-top:.7em}
+  .saver .shint{position:fixed; right:clamp(28px,6vw,96px); bottom:clamp(26px,6vh,84px);
+    font-family:var(--mono); font-size:clamp(10px,1vw,13px); letter-spacing:.2em; text-transform:uppercase;
+    color:var(--meta)}
+
+  body.preload *{transition:none!important}
+  @media (prefers-reduced-motion: reduce){ *{transition:none!important} }
+</style>
+</head>
+<body class="preload" data-view="home">
+
+  <!-- ============ HOME ============ -->
+  <main class="view" id="home">
+    <div class="top">
+      <div class="mark">Home</div>
+      <div class="glyphs" id="glyphs">
+        <button data-act="library" aria-label="All apps"><svg viewBox="0 0 24 24"><g class="g"><rect x="4" y="4" width="6.2" height="6.2"/><rect x="13.8" y="4" width="6.2" height="6.2"/><rect x="4" y="13.8" width="6.2" height="6.2"/><rect x="13.8" y="13.8" width="6.2" height="6.2"/></g></svg></button>
+        <button data-act="manage" aria-label="Edit favourites"><svg viewBox="0 0 24 24"><g class="g"><circle cx="12" cy="12" r="2.3"/><path d="M12 3.6v2.2M12 18.2v2.2M20.4 12h-2.2M5.8 12H3.6M17.9 6.1l-1.6 1.6M7.7 16.3l-1.6 1.6M17.9 17.9l-1.6-1.6M7.7 7.7 6.1 6.1"/></g></svg></button>
+        <button data-act="airplay" aria-label="AirPlay"><svg viewBox="0 0 24 24"><g class="g"><rect x="3.8" y="4.4" width="16.4" height="10.6" rx="1.7"/></g><path d="M12 14.6 L17 20.6 L7 20.6 Z" style="fill:currentColor;stroke:none"/></svg></button>
+      </div>
+    </div>
+
+    <section class="hero">
+      <p class="greeting"><span class="daymark" id="daymark"></span><span id="greeting">Good evening</span></p>
+      <div class="heroline">
+        <div class="clock"><span class="time" id="time">7:34</span><span class="mer" id="mer">PM</span></div>
+        <div class="wx" id="wx"><span class="deg" id="deg">&mdash;</span><span class="cond" id="cond"></span></div>
+      </div>
+      <p class="date" id="date">Thursday, October 22</p>
+    </section>
+
+    <section class="quotewrap"><p class="quote" id="quote"></p></section>
+
+    <section class="favwrap">
+      <div class="lhead">Favourites</div>
+      <div class="favs" id="favs" aria-label="Favourites"></div>
+    </section>
+
+    <div class="foot"><span id="foothint">Press OK to open</span><span>Up for controls</span></div>
+  </main>
+
+  <!-- ============ LIBRARY ============ -->
+  <main class="view" id="library">
+    <div class="vhead">
+      <div class="vtitle"><h1 id="libtitle">All apps</h1><span class="count" id="count">00 apps</span></div>
+      <div class="back" id="back">&lsaquo;&nbsp; Back</div>
+    </div>
+    <div class="grid" id="grid" aria-label="All apps"></div>
+    <div class="foot"><span id="libfoot">OK to open &nbsp;/&nbsp; Back to return</span><span id="pos">01</span></div>
+  </main>
+
+  <!-- ============ MANAGE favourites ============ -->
+  <main class="view" id="manage">
+    <div class="vhead">
+      <div class="vtitle"><h1>Favourites</h1><span class="count" id="mcount">00</span></div>
+      <div class="back" id="mback">&lsaquo;&nbsp; Done</div>
+    </div>
+    <div class="mlist" id="mlist" aria-label="Edit favourites"></div>
+    <div class="foot"><span id="mfoot">OK move &nbsp;/&nbsp; Right remove &nbsp;/&nbsp; Back to finish</span></div>
+  </main>
+
+  <!-- ============ SOURCES (HDMI inputs) ============ -->
+  <main class="view" id="sources">
+    <div class="vhead">
+      <div class="vtitle"><h1>Sources</h1><span class="count" id="scount">00</span></div>
+      <div class="back" id="sback">&lsaquo;&nbsp; Back</div>
+    </div>
+    <div class="mlist" id="slist" aria-label="Inputs"></div>
+    <div class="foot"><span id="sfoot">OK to switch &nbsp;/&nbsp; Back to return</span><span id="sstat"></span></div>
+  </main>
+
+  <!-- ============ AIRPLAY (info sheet) ============ -->
+  <div class="sheet" id="airplay" aria-hidden="true">
+    <div class="card">
+      <h2 class="ktitle">AirPlay.</h2>
+      <span class="kstep"><span class="n">01</span>Open Control Center on iPhone, iPad or Mac</span>
+      <span class="kstep"><span class="n">02</span>Tap Screen Mirroring</span>
+      <span class="kstep"><span class="n">03</span>Choose this TV</span>
+      <span class="knote">Picture and sound arrive on their own. Index steps aside while you stream and returns when you finish.</span>
+      <div class="kback">&lsaquo;&nbsp; Back to close</div>
+    </div>
+  </div>
+
+  <!-- ============ SCREENSAVER (idle) ============ -->
+  <div class="saver" id="saver" aria-hidden="true">
+    <canvas id="svcanvas"></canvas>
+    <div class="sclock"><div class="stime" id="stime">7:34</div><div class="sdate" id="sdate">Thursday, October 22</div></div>
+    <div class="shint">Press any key</div>
+  </div>
+
+<script>
+(function(){
+  "use strict";
+
+  /* ---- apps + favourites ----------------------------------- */
+  var ALL = ["Netflix","YouTube","Disney+","Prime Video","HBO Max","Twitch","Hulu",
+    "Apple TV","Peacock TV","Paramount+","Crunchyroll","ESPN","Sling TV","YouTube TV",
+    "Xbox","Instagram","Internet","Gallery"];
+  var DEFAULT_FAVS = ["Netflix","YouTube","Disney+","Prime Video","HBO Max","Twitch","Hulu"];
+  function loadFavs(){
+    try{ var s=localStorage.getItem("index.favs"); if(s){ var a=JSON.parse(s); if(a&&a.length) return a.filter(function(n){return ALL.indexOf(n)>=0;}); } }catch(e){}
+    return DEFAULT_FAVS.slice();
+  }
+  function saveFavs(){ try{ localStorage.setItem("index.favs", JSON.stringify(FAVS)); }catch(e){} }
+  var FAVS = loadFavs();
+  var META = {Netflix:"Resume",YouTube:"Subscribed","Disney+":"Resume","Prime Video":"Watchlist","HBO Max":"Series",Twitch:"Live",Hulu:"Resume"};
+
+  var KNOWN_IDS = {
+    "Netflix":"org.tizen.netflix-app", "YouTube":"9Ur5IzDKqV.TizenYouTube",
+    "Prime Video":"org.tizen.primevideo", "Apple TV":"com.samsung.tv.aria-video",
+    "Twitch":"Jz7aUrV2Q4.Twitch", "Hulu":"LBUAQX1exg.Hulu",
+    "Paramount+":"rJyOSqC6Up.CBSAllAccess", "Crunchyroll":"OGLLvqej7u.CrunchyrollWebApp",
+    "ESPN":"XtU8fQk2gN.ESPN", "Internet":"org.tizen.browser", "Gallery":"com.samsung.tv.gallery"
+  };
+  var NAME2ID = {}; for (var k in KNOWN_IDS) NAME2ID[k] = KNOWN_IDS[k];
+
+  function launchApp(name){
+    try{
+      if(window.tizen && tizen.application){
+        var id = NAME2ID[name];
+        if(id){ tizen.application.launch(id, function(){}, function(){
+          try{ var c=new tizen.ApplicationControl("http://tizen.org/appcontrol/operation/default");
+               tizen.application.launchAppControl(c, id, function(){}, function(){}); }catch(e){} }); return true; }
+      }
+    }catch(e){}
+    return false;
+  }
+  try{
+    if(window.tizen && tizen.application && tizen.application.getAppsInfo){
+      tizen.application.getAppsInfo(function(apps){
+        for(var i=0;i<apps.length;i++){ var a=apps[i];
+          if(a && a.name && a.id && NAME2ID[a.name]===undefined && /\./.test(a.id)) NAME2ID[a.name]=a.id; }
+      }, function(){});
+    }
+  }catch(e){}
+  // Start the home watchdog (keeps Index as home after app exits).
+  try{ if(window.tizen && tizen.application){ tizen.application.launch("MaxHome001.Watchdog", function(){}, function(){}); } }catch(e){}
+
+  var body=document.body;
+
+  /* ---- AirPlay info sheet ---------------------------------- */
+  var sheetOpen=false;
+  function openSheet(){ sheetOpen=true; body.classList.add("sheet-on"); }
+  function closeSheet(){ sheetOpen=false; body.classList.remove("sheet-on"); }
+
+  /* ---- screensaver (idle): rotating wireframe surface ------ */
+  var SAVER_IDLE=120000; // 2 min of no key -> ambient wireframe
+  var idleTimer=null, saverOn=false, rafId=null, svStart=0;
+  var cv=document.getElementById("svcanvas"), ctx=cv&&cv.getContext&&cv.getContext("2d");
+  function resetIdle(){ if(saverOn) return; if(idleTimer){ clearTimeout(idleTimer); } idleTimer=setTimeout(showSaver, SAVER_IDLE); }
+  function showSaver(){ if(saverOn) return; saverOn=true; syncSaverClock(); body.classList.add("saver-on");
+    sizeCanvas(); svStart=nowMs(); loopSaver(); }
+  function hideSaver(){ if(!saverOn) return; saverOn=false; body.classList.remove("saver-on");
+    if(rafId){ cancelAnimationFrame(rafId); rafId=null; } resetIdle(); }
+  function syncSaverClock(){ var st=document.getElementById("stime"), sd=document.getElementById("sdate");
+    try{ if(st&&elTime) st.textContent=elTime.textContent; if(sd&&elDate) sd.textContent=elDate.textContent; }catch(e){} }
+  function nowMs(){ return (window.performance&&performance.now)?performance.now():(+new Date()); }
+  function sizeCanvas(){ if(!cv) return; cv.width=window.innerWidth||1920; cv.height=window.innerHeight||1080; }
+  function loopSaver(){ if(!saverOn) return; drawSurface((nowMs()-svStart)/1000); rafId=requestAnimationFrame(loopSaver); }
+  var SVN=24; // mesh resolution (kept modest for the 2020 TV)
+  function drawSurface(t){
+    if(!ctx) return;
+    var W=cv.width, H=cv.height; ctx.clearRect(0,0,W,H);
+    var CXp=W*0.5, CYp=H*0.50, S=Math.min(W,H)*0.33;
+    var yaw=t*0.16, cY=Math.cos(yaw), sY=Math.sin(yaw);
+    var pitch=1.0, cP=Math.cos(pitch), sP=Math.sin(pitch);
+    var N=SVN, span=2.3, amp=0.60;
+    var sx=[], sy=[], dep=[], dmin=1e9, dmax=-1e9, i, j;
+    for(i=0;i<=N;i++){ sx[i]=[]; sy[i]=[]; dep[i]=[];
+      for(j=0;j<=N;j++){
+        var x=(i/N-0.5)*span, y=(j/N-0.5)*span, r=Math.sqrt(x*x+y*y);
+        var z=amp*Math.sin(x*2.3+t*0.9)*Math.cos(y*2.3-t*0.6)*Math.exp(-r*0.22);
+        var X=x*cY-y*sY, Y=x*sY+y*cY;            // yaw about vertical
+        var Yp=Y*cP-z*sP, Zp=Y*sP+z*cP;          // tilt
+        sx[i][j]=CXp+X*S; sy[i][j]=CYp-Zp*S; dep[i][j]=Yp;
+        if(Yp<dmin)dmin=Yp; if(Yp>dmax)dmax=Yp;
+      }
+    }
+    var rng=(dmax-dmin)||1;
+    ctx.lineWidth=1;
+    function stroke(line){ // line: array of [i,j]
+      // depth-faded ink: nearer lines darker
+      var d=0; for(var p=0;p<line.length;p++) d+=dep[line[p][0]][line[p][1]]; d/=line.length;
+      var a=0.52-0.34*((d-dmin)/rng);
+      ctx.strokeStyle="rgba(26,25,21,"+a.toFixed(3)+")";
+      ctx.beginPath();
+      for(var q=0;q<line.length;q++){ var I=line[q][0], J=line[q][1];
+        if(q===0) ctx.moveTo(sx[I][J],sy[I][J]); else ctx.lineTo(sx[I][J],sy[I][J]); }
+      ctx.stroke();
+    }
+    for(i=0;i<=N;i++){ var row=[]; for(j=0;j<=N;j++) row.push([i,j]); stroke(row); }
+    for(j=0;j<=N;j++){ var col=[]; for(i=0;i<=N;i++) col.push([i,j]); stroke(col); }
+  }
+  window.addEventListener("resize",function(){ if(saverOn) sizeCanvas(); });
+
+  /* ---- view routing ---------------------------------------- */
+  function setView(v){
+    body.setAttribute("data-view", v);
+    if(v==="home") focusHome();
+    else if(v==="library") focusG(0);
+    else if(v==="manage") { renderManage(); focusM(0); }
+    else if(v==="sources") { renderSources(); focusS(0); }
+  }
+
+  /* ---- HOME: favourites grid + glyph bar ------------------- */
+  var glyphs=[].slice.call(document.querySelectorAll("#glyphs button"));
+  var favsEl=document.getElementById("favs");
+  var cells=[], hi=0, zone="favs", ggi=0, favRows=1, favCols=2;
+  function renderFavs(){
+    favsEl.innerHTML="";
+    FAVS.forEach(function(name,i){
+      var c=document.createElement("div"); c.className="cell"; c.dataset.name=name;
+      c.innerHTML='<span class="dot"></span><span class="idx">'+String(i+1).padStart(2,"0")+
+        '</span><span class="name">'+name+'.</span>';
+      favsEl.appendChild(c);
+    });
+    // Sources: always the last option on the favourites page
+    var s=document.createElement("div"); s.className="cell src"; s.dataset.src="1";
+    s.innerHTML='<span class="dot"></span><span class="idx">&middot;</span><span class="name">Sources.</span>';
+    favsEl.appendChild(s);
+    cells=[].slice.call(favsEl.querySelectorAll(".cell"));
+    // column-major: fill column 1 top-to-bottom, then column 2
+    favCols=2; favRows=Math.ceil(cells.length/favCols);
+    favsEl.style.gridAutoFlow="column";
+    favsEl.style.gridTemplateRows="repeat("+favRows+",auto)";
+    cells.forEach(function(c,k){
+      c.addEventListener("mouseenter",function(){ focusCell(k); });
+      c.addEventListener("click",function(){ if(zone==="favs"&&hi===k){ pressCell(); } else focusCell(k); });
+    });
+  }
+  function clearGlyphs(){ glyphs.forEach(function(b){ b.classList.remove("on"); }); }
+  function focusHome(){ if(zone==="glyphs") focusGlyphs(ggi); else focusCell(hi); }
+  function focusCell(i){ zone="favs"; clearGlyphs(); hi=Math.max(0,Math.min(cells.length-1,i));
+    cells.forEach(function(c,k){ c.classList.toggle("on",k===hi); }); }
+  function focusGlyphs(i){ zone="glyphs"; cells.forEach(function(c){ c.classList.remove("on"); });
+    ggi=(i+glyphs.length)%glyphs.length; glyphs.forEach(function(b,k){ b.classList.toggle("on",k===ggi); }); }
+  function pressCell(){ var c=cells[hi]; if(!c) return;
+    c.classList.add("press"); setTimeout(function(){ c.classList.remove("press"); },240);
+    if(c.dataset.src){ setView("sources"); return; }
+    launchApp(c.dataset.name); }
+  function activateGlyph(){ var a=glyphs[ggi]&&glyphs[ggi].dataset.act;
+    if(a==="library") setView("library"); else if(a==="manage") setView("manage"); else if(a==="airplay") openSheet(); }
+  glyphs.forEach(function(b,k){
+    b.addEventListener("mouseenter",function(){ focusGlyphs(k); });
+    b.addEventListener("click",function(){ focusGlyphs(k); activateGlyph(); });
+  });
+
+  /* ---- LIBRARY (launch mode + pick mode) ------------------- */
+  var grid=document.getElementById("grid");
+  var gitems=[], gi=0, pickMode=false;
+  function renderLibrary(){
+    grid.innerHTML="";
+    var list = pickMode ? ALL.filter(function(n){ return FAVS.indexOf(n)<0; }) : ALL;
+    libList = list;
+    list.forEach(function(name,i){
+      var it=document.createElement("div"); it.className="gitem"; it.dataset.name=name;
+      if(!pickMode && FAVS.indexOf(name)>=0) it.className+=" fav";
+      it.innerHTML='<span class="gdot"></span><span class="gidx">'+String(i+1).padStart(2,"0")+
+        '</span><span class="gname">'+name+'.</span><span class="gtag">'+(pickMode?"Add":(FAVS.indexOf(name)>=0?"Favourite":"Open"))+'</span>';
+      grid.appendChild(it);
+    });
+    gitems=[].slice.call(grid.querySelectorAll(".gitem"));
+    gitems.forEach(function(it,k){
+      it.addEventListener("mouseenter",function(){ focusG(k); });
+      it.addEventListener("click",function(){ if(gi===k) pressG(); else focusG(k); });
+    });
+    document.getElementById("libtitle").textContent = pickMode ? "Add to favourites" : "All apps";
+    document.getElementById("count").textContent = String(list.length).padStart(2,"0")+(pickMode?" available":" apps");
+    document.getElementById("libfoot").textContent = pickMode ? "OK to add  /  Back to cancel" : "OK to open  /  Back to return";
+  }
+  var libList=ALL;
+  function cols(){ return getComputedStyle(grid).gridTemplateColumns.split(" ").length; }
+  function focusG(i){ gi=Math.max(0,Math.min(gitems.length-1,i));
+    gitems.forEach(function(it,k){ it.classList.toggle("on",k===gi); });
+    document.getElementById("pos").textContent=String(gi+1).padStart(2,"0");
+    var el=gitems[gi]; if(el&&el.scrollIntoView) el.scrollIntoView({block:"nearest"}); }
+  function pressG(){ var it=gitems[gi]; if(!it) return;
+    it.classList.add("press"); setTimeout(function(){ it.classList.remove("press"); },240);
+    var name=it.dataset.name;
+    if(pickMode){ if(FAVS.indexOf(name)<0){ FAVS.push(name); saveFavs(); } pickMode=false; setView("manage"); }
+    else launchApp(name);
+  }
+  document.getElementById("back").addEventListener("click",function(){ if(pickMode){ pickMode=false; setView("manage"); } else setView("home"); });
+
+  /* ---- MANAGE (reorder / remove / add) --------------------- */
+  var mlist=document.getElementById("mlist");
+  var mrows=[], mi=0, grabbed=false, onRemove=false;
+  function renderManage(){
+    mlist.innerHTML="";
+    FAVS.forEach(function(name,i){
+      var r=document.createElement("div"); r.className="mrow"; r.dataset.name=name;
+      r.innerHTML='<span class="midx">'+String(i+1).padStart(2,"0")+'</span><span class="mname">'+name+'.</span><span class="mact">Move</span>';
+      mlist.appendChild(r);
+    });
+    var add=document.createElement("div"); add.className="mrow add"; add.dataset.add="1";
+    add.innerHTML='<span class="midx">+</span><span class="mname">Add from library.</span><span class="mact">Open</span>';
+    mlist.appendChild(add);
+    mrows=[].slice.call(mlist.querySelectorAll(".mrow"));
+    mrows.forEach(function(r,k){
+      r.addEventListener("mouseenter",function(){ if(!grabbed){ onRemove=false; focusM(k); } });
+      r.addEventListener("click",function(){ focusM(k); mPress(); });
+    });
+    document.getElementById("mcount").textContent=String(FAVS.length).padStart(2,"0");
+  }
+  function focusM(i){ mi=Math.max(0,Math.min(mrows.length-1,i));
+    mrows.forEach(function(r,k){ r.classList.toggle("on",k===mi); r.classList.toggle("rm",k===mi&&onRemove&&!r.dataset.add); r.classList.toggle("grab",k===mi&&grabbed); });
+    var row=mrows[mi]; if(row){ var act=row.querySelector(".mact"); if(act) act.textContent = row.dataset.add ? "Open" : (onRemove ? "Remove" : "Move"); }
+    var el=mrows[mi]; if(el&&el.scrollIntoView) el.scrollIntoView({block:"nearest"});
+  }
+  function mMove(dir){ // move grabbed favourite up/down
+    var j=mi+dir; if(j<0||j>=FAVS.length) return;
+    var t=FAVS[mi]; FAVS[mi]=FAVS[j]; FAVS[j]=t; saveFavs();
+    renderManage(); grabbed=true; focusM(j);
+  }
+  function mPress(){
+    var row=mrows[mi]; if(!row) return;
+    if(row.dataset.add){ pickMode=true; renderLibrary(); setView("library"); return; }
+    if(onRemove){ FAVS.splice(mi,1); saveFavs(); renderManage(); onRemove=false; focusM(Math.min(mi,mrows.length-1)); return; }
+    grabbed=!grabbed; focusM(mi); // toggle pick-up / drop
+  }
+
+  /* ---- SOURCES (HDMI inputs via tvwindow) ------------------ */
+  var slist=document.getElementById("slist");
+  var srows=[], si=0, hdmiShowing=false;
+  var INPUTS=[{num:1,label:"HDMI 1"},{num:2,label:"HDMI 2"},{num:3,label:"HDMI 3"},{num:4,label:"HDMI 4"}];
+  function loadInputLabels(){
+    try{ var s=localStorage.getItem("index.inputs"); if(s){ var m=JSON.parse(s);
+      INPUTS.forEach(function(it){ if(m[it.num]) it.label=m[it.num]; }); } }catch(e){}
+  }
+  function renderSources(){
+    loadInputLabels();
+    slist.innerHTML="";
+    INPUTS.forEach(function(it,i){
+      var r=document.createElement("div"); r.className="mrow"; r.dataset.num=it.num;
+      r.innerHTML='<span class="midx">'+String(i+1).padStart(2,"0")+'</span><span class="mname">'+it.label+'.</span><span class="mact">Switch</span>';
+      slist.appendChild(r);
+    });
+    srows=[].slice.call(slist.querySelectorAll(".mrow"));
+    srows.forEach(function(r,k){
+      r.addEventListener("mouseenter",function(){ focusS(k); });
+      r.addEventListener("click",function(){ focusS(k); sPress(); });
+    });
+    document.getElementById("scount").textContent=String(INPUTS.length).padStart(2,"0");
+    var st=document.getElementById("sstat");
+    try{ tizen.systeminfo.getPropertyValue("VIDEOSOURCE", function(v){
+      if(st) st.textContent="Now: "+(v&&v.type||"?")+(v&&v.number!=null?(" "+v.number):""); }, function(){}); }
+    catch(e){ if(st) st.textContent=""; }
+  }
+  function focusS(i){ si=Math.max(0,Math.min(srows.length-1,i));
+    srows.forEach(function(r,k){ r.classList.toggle("on",k===si); });
+    var el=srows[si]; if(el&&el.scrollIntoView) el.scrollIntoView({block:"nearest"}); }
+  function sPress(){ var r=srows[si]; if(!r) return;
+    switchSource(parseInt(r.dataset.num,10), r.querySelector(".mname").textContent.replace(/\.$/,"")); }
+  function switchSource(num, label){
+    var st=document.getElementById("sstat");
+    try{
+      if(window.tizen && tizen.tvwindow && tizen.tvwindow.setSource){
+        tizen.tvwindow.setSource({type:"HDMI", number:num}, function(){
+          hdmiShowing=true;
+          try{ tizen.tvwindow.show(function(){ if(st) st.textContent="On "+label; },
+            function(){ if(st) st.textContent="show failed"; },
+            ["0px","0px","100%","100%"], "MAIN", "FRONT"); }
+          catch(e){ if(st) st.textContent="show error"; }
+        }, function(err){ if(st) st.textContent="no signal / "+(err&&err.name||err); }, "MAIN");
+        return;
+      }
+    }catch(e){ if(st) st.textContent="inputs API error"; return; }
+    if(st) st.textContent="inputs API unavailable on this app";
+  }
+  function exitSources(){
+    if(hdmiShowing){ hdmiShowing=false;
+      try{ if(tizen.tvwindow && tizen.tvwindow.hide) tizen.tvwindow.hide(function(){},function(){},"MAIN"); }catch(e){} }
+    setView("home");
+  }
+
+  /* ---- keys ------------------------------------------------- */
+  document.addEventListener("keydown",function(e){
+    if(saverOn){ e.preventDefault(); hideSaver(); return; }   // any key wakes from screensaver
+    resetIdle();
+    if(sheetOpen){ e.preventDefault();
+      if(e.key==="Enter"||e.key===" "||e.key==="Backspace"||e.key==="Escape"||e.key==="XF86Back") closeSheet();
+      return; }
+    var v=body.getAttribute("data-view");
+    if(v==="home"){
+      if(zone==="glyphs"){
+        switch(e.key){ case "ArrowRight": e.preventDefault(); focusGlyphs(ggi+1); break;
+          case "ArrowLeft": e.preventDefault(); focusGlyphs(ggi-1); break;
+          case "ArrowDown": e.preventDefault(); focusCell(0); break;
+          case "Enter": case " ": e.preventDefault(); activateGlyph(); break; }
+      } else {
+        var R=favRows, N=cells.length, row=hi%R;   // column-major: down within a column, right to next column
+        switch(e.key){
+          case "ArrowDown":  e.preventDefault(); if(row<R-1 && hi+1<N) focusCell(hi+1); break;
+          case "ArrowUp":    e.preventDefault(); if(row>0) focusCell(hi-1); else focusGlyphs(glyphs.length-1); break;
+          case "ArrowRight": e.preventDefault(); if(hi+R<N) focusCell(hi+R); break;
+          case "ArrowLeft":  e.preventDefault(); if(hi-R>=0) focusCell(hi-R); break;
+          case "Enter": case " ": e.preventDefault(); pressCell(); break;
+        }
+      }
+    } else if(v==="library"){
+      var c2=cols();
+      switch(e.key){
+        case "ArrowRight": e.preventDefault(); focusG(gi+1); break;
+        case "ArrowLeft":  e.preventDefault(); focusG(gi-1); break;
+        case "ArrowDown":  e.preventDefault(); focusG(gi+c2); break;
+        case "ArrowUp":    e.preventDefault(); focusG(gi-c2); break;
+        case "Enter": case " ": e.preventDefault(); pressG(); break;
+        case "Backspace": case "Escape": case "XF86Back": e.preventDefault(); if(pickMode){ pickMode=false; setView("manage"); } else setView("home"); break;
+      }
+    } else if(v==="manage"){
+      switch(e.key){
+        case "ArrowUp":   e.preventDefault(); if(grabbed) mMove(-1); else { onRemove=false; focusM(mi-1<0?0:mi-1); } break;
+        case "ArrowDown": e.preventDefault(); if(grabbed) mMove(1); else { onRemove=false; focusM(mi+1>=mrows.length?mrows.length-1:mi+1); } break;
+        case "ArrowRight": e.preventDefault(); if(!grabbed && !mrows[mi].dataset.add){ onRemove=true; focusM(mi); } break;
+        case "ArrowLeft":  e.preventDefault(); if(!grabbed){ onRemove=false; focusM(mi); } break;
+        case "Enter": case " ": e.preventDefault(); mPress(); break;
+        case "Backspace": case "Escape": case "XF86Back": e.preventDefault(); if(grabbed){ grabbed=false; focusM(mi); } else setView("home"); break;
+      }
+    } else if(v==="sources"){
+      switch(e.key){
+        case "ArrowUp":   e.preventDefault(); focusS(si-1); break;
+        case "ArrowDown": e.preventDefault(); focusS(si+1); break;
+        case "Enter": case " ": e.preventDefault(); sPress(); break;
+        case "Backspace": case "Escape": case "XF86Back": e.preventDefault(); exitSources(); break;
+      }
+    }
+  });
+  document.getElementById("mback").addEventListener("click",function(){ setView("home"); });
+  document.getElementById("sback").addEventListener("click",exitSources);
+
+  /* mouse (demo only; the TV is keys) + click-to-close sheet/saver */
+  document.addEventListener("mousemove",function(){ if(saverOn) hideSaver(); else resetIdle(); });
+  document.getElementById("airplay").addEventListener("click",closeSheet);
+  document.getElementById("saver").addEventListener("click",hideSaver);
+
+  /* ---- boot ------------------------------------------------- */
+  renderFavs(); renderLibrary(); renderManage(); focusCell(0);
+  requestAnimationFrame(function(){ body.classList.remove("preload"); });
+
+  /* ---- day / night: sun-moon mark + rotating SAS quotes ---- */
+  var SUN_SVG='<svg viewBox="0 0 24 24"><g class="g"><circle cx="12" cy="12" r="4.2"/><path d="M12 2.4v2.6M12 19v2.6M21.6 12H19M5 12H2.4M18.8 5.2l-1.8 1.8M7 17l-1.8 1.8M18.8 18.8 17 17M7 7 5.2 5.2"/></g></svg>';
+  var MOON_SVG='<svg viewBox="0 0 24 24"><g class="g"><path d="M20 14.6A8 8 0 0 1 9.4 4 6.8 6.8 0 1 0 20 14.6Z"/></g></svg>';
+  var ROUND_START=[
+    "Let's make this right as rain.","Let's go, fellas.","Let's move out!",
+    "Remove any doubts in your head; it's us, or them.",
+    "Remember! This isn't the killing house anymore! This is real life.",
+    "Watch out. These boys have got a bit of an arsenal and they don't mind using it!",
+    "Let's have it, lads!","Let's give it to them, boys!","Let's show them who we are!",
+    "Are we rushing in? Or are we going sneaky-beaky like?","For Queen and country, men!",
+    "Remember! This is bandit country. Shoot everything that moves.",
+    "Gear up! We're going in!","We are out of here!","We're on!","Right lads, we're on.",
+    "These fellas are gonna regret waking up this morning.","They're gonna wish they were never born.",
+    "Let's have at it, mates!","Gear up; we aren't going on a windy walk here!"
+  ];
+  var ROUND_END=[
+    "Niice!","You're a champion!","Alright, alright!","Right on!",
+    "Ah you're right on, you're right on!","There's no stopping us!","We took the piss out 'em!",
+    "Ah, we're really laying into 'em!","Ah, we're getting stumped right into 'em!",
+    "We're in the clear, lads!","Good stuff!","Easy peasy, lemon squeezy!",
+    "Ah, that's some serious stuff, man!","Ah, it's a piece of cake, so it is!",
+    "Bingo, bango, bongo; bish, bash, bosh."
+  ];
+  var qList=ROUND_START, qIdx=0, qDay=null;
+  function setQuoteMode(isDay){ if(qDay===isDay) return; qDay=isDay; qList=isDay?ROUND_START:ROUND_END;
+    qIdx=Math.floor(Math.random()*qList.length); showQuote(); }
+  function showQuote(){ var el=document.getElementById("quote"); if(!el) return;
+    el.classList.remove("show");
+    setTimeout(function(){ el.innerHTML='<span class="qm">“</span>'+qList[qIdx%qList.length]+'<span class="qm">”</span>'; el.classList.add("show"); }, 480); }
+  function cycleQuote(){ if(!qList.length) return; qIdx=(qIdx+1)%qList.length; showQuote(); }
+  setInterval(cycleQuote, 16000);
+
+  /* ---- clock ----------------------------------------------- */
+  var elTime=document.getElementById("time"), elMer=document.getElementById("mer"),
+      elDate=document.getElementById("date"), elGreet=document.getElementById("greeting");
+  var DAYS=["Sunday","Monday","Tuesday","Wednesday","Thursday","Friday","Saturday"];
+  var MON=["January","February","March","April","May","June","July","August","September","October","November","December"];
+  function tick(){ var d=new Date(), h=d.getHours(), m=d.getMinutes(), h12=h%12; if(h12===0) h12=12;
+    elTime.textContent=h12+":"+String(m).padStart(2,"0"); elMer.textContent=h>=12?"PM":"AM";
+    elDate.textContent=DAYS[d.getDay()]+", "+MON[d.getMonth()]+" "+d.getDate();
+    elGreet.textContent=h<5?"Good night":h<12?"Good morning":h<17?"Good afternoon":"Good evening";
+    var isDay=h>=6&&h<18; var dm=document.getElementById("daymark"); if(dm) dm.innerHTML=isDay?SUN_SVG:MOON_SVG;
+    setQuoteMode(isDay); syncSaverClock(); }
+  tick(); var now=new Date();
+  setTimeout(function(){ tick(); setInterval(tick,60000); }, Math.max(300,(60-now.getSeconds())*1000));
+
+  /* ---- weather (IP geolocate -> Open-Meteo, no key) -------- */
+  var WMO={0:"Clear",1:"Clear",2:"Partly cloudy",3:"Cloudy",45:"Fog",48:"Fog",51:"Drizzle",53:"Drizzle",55:"Drizzle",
+    61:"Rain",63:"Rain",65:"Rain",66:"Rain",67:"Rain",71:"Snow",73:"Snow",75:"Snow",77:"Snow",
+    80:"Showers",81:"Showers",82:"Showers",85:"Snow",86:"Snow",95:"Storm",96:"Storm",99:"Storm"};
+  function showWx(temp,code){
+    var deg=document.getElementById("deg"), cond=document.getElementById("cond"), wx=document.getElementById("wx");
+    if(deg) deg.textContent=Math.round(temp)+"°";
+    if(cond) cond.textContent=WMO[code]||"";
+    if(wx) wx.classList.add("show"); }
+  function loadWeather(){ if(!window.fetch) return;
+    fetch("https://ipwho.is/").then(function(r){return r.json();}).then(function(loc){
+      var la=loc.latitude, lo=loc.longitude; if(la==null||lo==null) throw 0;
+      return fetch("https://api.open-meteo.com/v1/forecast?latitude="+la+"&longitude="+lo+"&current=temperature_2m,weather_code&temperature_unit=fahrenheit");
+    }).then(function(r){return r.json();}).then(function(w){ var c=w&&w.current; if(c) showWx(c.temperature_2m,c.weather_code); }).catch(function(){});
+  }
+  loadWeather(); setInterval(loadWeather, 30*60*1000);
+
+  /* ---- arm the idle screensaver (clock is live now) -------- */
+  resetIdle();
+  try{ if(location.hash.indexOf("saver")>=0) showSaver();
+    var hv=location.hash.match(/view=(\w+)/); if(hv) setView(hv[1]); }catch(e){}
+})();
+</script>
+</body>
+</html>

@@ -1,0 +1,18 @@
+# python environments
+.venv/
+.venv-tizen/
+
+# local secrets, device backups, build output, OS cruft
+.credentials/
+backups/
+build/
+.DS_Store
+
+# design scratch: keep only the app source, ignore experiments/screenshots
+work/*
+!work/mockups
+work/mockups/*
+!work/mockups/index-app.html
+
+# top-level design experiments
+direction-*.html

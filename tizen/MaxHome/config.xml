@@ -1,0 +1,25 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<widget xmlns="http://www.w3.org/ns/widgets" xmlns:tizen="http://tizen.org/ns/widgets"
+        id="http://maxharris.io/index" version="1.0.0" viewmodes="maximized">
+  <tizen:application id="MaxHome001.Home" package="MaxHome001" required_version="2.4"/>
+  <content src="index.html"/>
+  <icon src="icon.png"/>
+  <name>Index</name>
+  <author>Max Harris</author>
+  <tizen:privilege name="http://tizen.org/privilege/application.launch"/>
+  <tizen:privilege name="http://tizen.org/privilege/application.info"/>
+  <tizen:privilege name="http://tizen.org/privilege/tv.inputdevice"/>
+  <tizen:privilege name="http://tizen.org/privilege/internet"/>
+  <tizen:privilege name="http://tizen.org/privilege/filesystem.read"/>
+  <tizen:privilege name="http://tizen.org/privilege/alarm"/>
+  <tizen:setting screen-orientation="landscape" context-menu="disable"
+                 background-support="disable" encryption="disable" hwkey-event="enable"/>
+  <feature name="http://tizen.org/feature/screen.size.normal.1080.1920"/>
+  <feature name="http://tizen.org/feature/web.service"/>
+  <access origin="*" subdomains="true"/>
+  <tizen:service id="MaxHome001.Watchdog" auto-restart="true" on-boot="true">
+    <tizen:content src="service/service.js"/>
+    <tizen:name>HomeWatchdog</tizen:name>
+    <tizen:description>Relaunch Index when the user returns to the Samsung home</tizen:description>
+  </tizen:service>
+</widget>
